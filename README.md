@@ -2,4 +2,4 @@
 A collection of short nerdy write-ups about anything I found interesting
 
 ### Contents
-Nothing to see here yet. Check back later :)
+ - [NTLM Hacking](./entries/0-ntlm_hacking.md)
