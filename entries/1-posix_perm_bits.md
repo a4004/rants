@@ -12,17 +12,29 @@ Hopefully, you're already familliar with binary numbers, but if you're not heres
 |  In base-10, the maximum amount of digits is 10 (0-9 inclusive). |
 
 To write 255 in base-10, we do the following:
-![](https://github.com/adev4004/rants/blob/main/assets/1/1.png?raw=true)
+| 10² = 100 | 10¹ = 10 | 10⁰ = 1 |
+| --- | --- | --- |
+| 2 | 5 | 5 |
 
 So that means 2 * 100 + 5 * 10 + 5 * 1 = 255. In this case we have 3 digits which are used to represent the number. 
 
 To do the same in base-2, we do the following:
-![](https://github.com/adev4004/rants/blob/main/assets/1/2.png?raw=true)
+| 2⁷ = 128 | 2⁶ = 64 | 2⁵ = 32 | 2⁴ = 16 | 2³ = 8 | 2² = 4 | 2¹ = 2 | 2⁰ = 1  |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 |
 
 So that means 128 * 1 + 64 * 1 + 32 * 1 + 16 * 1 + 8 * 1 + 4 * 1 + 2 * 1 + 1 * 1 = 255. In this case we have 8 bits (binary digits) which are used to represent the number. 
 
+If we wanted to do a different number, say 192, the binary value would be:
+
+| 2⁷ = 128 | 2⁶ = 64 | 2⁵ = 32 | 2⁴ = 16 | 2³ = 8 | 2² = 4 | 2¹ = 2 | 2⁰ = 1  |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+As 128 + 64 = 192 (we don't add the value if it's set to zero).
+
 ## Symbolic file permissions
-When you run the `ls -l` you will see something like `-rwxrwxrwx` for the permissions of an object in your file system. This is the **symbolic** representation of the permissions. Let's break it down:
+When you run the `ls -l` command, you will see something like `-rwxrwxrwx` for the permissions of an object in your file system. This is the **symbolic** representation of the permissions. Let's break it down:
 - The first `-` is a placeholder which usually exists on normal files. In place of this you might see different letters which identify a type of object on the filesystem. Below is a list of the common "special file" designators:
 	- `d` is a directory (folder)
 	- `c` is a character device
@@ -45,17 +57,34 @@ chmod +x <file>
 ## Numerical file permissions
 So, leading up from the previous section - how can we express `-rwxrwxrwx` as a number. Well, we first need to interpret the permission bits in binary first. Now, you could go two possible ways about this (and one of them is wrong).
 
-### Option 1 - One binary number
+### Option 1 - Just use one binary number code for the entire permission
+| R | W | X | R | W | X | R | W | X |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 256 | 128 | 64 | 32 | 16 | 8 | 4 | 2 | 1 |
+| 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 |
 
-![](https://github.com/adev4004/rants/blob/main/assets/1/3.png?raw=true)
+In this way, the core permissions (read, write and execute or RWX) for the owner, group and everyone else are layed out in sequence and each permission has its own value which adds to the final sum. The sum of this 9-bit value is `511`. Which is difficult to interpret for both us and the computer. So, clearly this is the incorrect way of doing it.
 
-The sum of this is `511`. Which is difficult to interpret for both us and the computer. So, clearly this is the incorrect way of doing it.
+### Option 2 - Split the permission into the 3 components (owner, group and everyone else) and use 3-bits per component
+| R | W | X | R | W | X | R | W | X |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 4 | 2 | 1 | 4 | 2 | 1 | 4 | 2 | 1 |
+| 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 |
 
-### Option 2 - 3 binary numbers (Correct way)
+The sum of each 3-bit number is 7 (4 + 2 + 1), which gives us a permission code of 777. This is the correct numerical representation of the permission bits. This way makes it easier to understand when converted into denary as the first digit represents permission codes for the owner (0-7), then the next one is for the group (0-7) and the last one is for everyone else (also 0-7).
 
-![](https://github.com/adev4004/rants/blob/main/assets/1/4.png?raw=true)
+| Denary value | Binary value | Symbolic notation | Meaning |
+| --- | --- | --- | --- |
+| 0 | 000 | `---` | No permissions |
+| 1 | 001 | `--x` | Execute only |
+| 2 | 010 | `-w-` | Write only |
+| 3 | 011 | `-wx` | Write & execute only |
+| 4 | 100 | `r--` | Read only |
+| 5 | 101 | `r-x` | Read & execute only |
+| 6 | 110 | `rw-` | Read & write only |
+| 7 | 111 | `rwx` | Read & write & execute (full permissions) |
 
-The sum of each 3-bit number is 7 (4 + 2 + 1), which gives us a permission code of 777. This is the correct numerical representation of the permission bits.
+
 
 Given that now we know how to express the permissions for `-rwxrwxrwx` is both symbolic and numerical form, how can we manipulate it now? Simple, just change one of the bits. Say you want to deny write access to everyone else but yourself and your user group. Just change the W bit from 1 to a 0 in the last group.
 
