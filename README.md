@@ -1,4 +1,4 @@
-# adev4004's rants 📚
+# a4004's rants 📚
 A collection of short nerdy write-ups about anything I found interesting
 
 ### Contents
