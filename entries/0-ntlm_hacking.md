@@ -15,7 +15,7 @@ We'll explore 2 ways, in which an attacker with either physical or remote access
 ## Network Attack Theory
 This attack requires that the attacker gains access to the local area network, either by connecting their malicious device using a wireless connection such as Wi-Fi or through establishing a wired connection using Ethernet.
 
-> It's also possible an ttacker could also perform this attack remotely if they have remote root access to a device which is already on the local network.
+> It's also possible an attacker could also perform this attack remotely if they have remote root access to a device which is already on the local network.
 
 A utility called `responder` can be used to poison the local network by sending out false information onto the local network via broadcast which tricks devices into trusting the attacker's machine or otherwise accepting malicious network configuration information, allowing the attacker to capture and redirect certain types of traffic within the network.
 
