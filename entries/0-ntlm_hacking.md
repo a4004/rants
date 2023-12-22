@@ -1,8 +1,3 @@
-<p>
-  <a href="https://www.microsoft.com/en-us/windows/"><img alt="Windows" src="https://github.com/a4004/a4004/raw/main/www/svg/w10.svg"/></a> 
-  <a href="https://kali.org/"><img alt="Hyper-V" height="36" src="https://github.com/a4004/a4004/raw/main/www/svg/kali.png"/></a> 
-</p>
-
 # Pre-reading 🔍📚
 NTLM, otherwise known as the NT (New Technology) LAN Manager is a system of Microsoft security protocols used to provide various services within a Windows network. It is used to facilitate the following aspects:
 - Authentication
